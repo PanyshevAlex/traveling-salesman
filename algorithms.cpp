@@ -15,11 +15,12 @@
 using namespace std;
 
 int done = 0;
-
+string dest = "";
 // Constructor that takes a character string corresponding to an external filename and reads in cities from that file
-tsp::tsp(const char * filename)
+tsp::tsp(const char * filename, const char * destfilename)
 {
     num_cities = read_file(filename);
+    dest = destfilename;
 }
 
 // Copy constructor
@@ -155,6 +156,38 @@ int tsp::nearest_neighbor()
     {
         cout << "Writing solution " << total_dist << endl;
         write_solution(OUTPUT_FN);       //write current solution (midway through 2-opt)
+        return best_start_distance;
+    }
+}
+
+
+// Finds an initial tour using nearest neighbor, optimizes with basic 2-opt algorithm
+int tsp::nearest_neighbor_fast()
+{
+    solution.clear();
+    int total_dist = 0;
+    int best_start_distance = 9999999;
+    int last_run = 0;
+
+    // Run through entire 2-opt optimization for each city, write best index.
+    nearest_neighbor_basic(0);
+    last_run = two_change();
+    if (last_run < best_start_distance)
+    {
+        best_start_distance = last_run;
+        cout << "Writing solution " << best_start_distance << endl;
+        write_solution(dest);  // write each time an improvement is found
+    }
+
+
+    total_dist = get_solution_distance();
+    if (best_start_distance <= total_dist)
+        return best_start_distance;     // solution already written
+
+    else
+    {
+        cout << "Writing solution " << total_dist << endl;
+        write_solution(dest);       //write current solution (midway through 2-opt)
         return best_start_distance;
     }
 }
@@ -296,7 +329,7 @@ int tsp::get_solution_distance()
 }
 
 // Write solution to file_name
-void tsp::write_solution(const char * file_name)
+void tsp::write_solution(string file_name)
 {
     int distance = get_solution_distance();
     ofstream write(file_name);
