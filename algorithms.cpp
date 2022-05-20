@@ -16,11 +16,15 @@ using namespace std;
 
 int done = 0;
 string dest = "";
+string based = "";
+string based_coords = "";
 // Constructor that takes a character string corresponding to an external filename and reads in cities from that file
-tsp::tsp(const char * filename, const char * destfilename)
+tsp::tsp(const char * filename, const char * destfilename, const char * basedtour, const char * basedcoords)
 {
     num_cities = read_file(filename);
     dest = destfilename;
+    based = basedtour;
+    based_coords = basedcoords;
 }
 
 // Copy constructor
@@ -192,6 +196,90 @@ int tsp::nearest_neighbor_fast()
     }
 }
 
+int tsp::nearest_neighbor_fast_based()
+{
+    solution.clear();
+    int total_dist = 0;
+    int best_start_distance = 9999999;
+    int last_run = 0;
+
+    // Run through entire 2-opt optimization for each city, write best index.
+    based_tour();
+    last_run = two_change();
+    if (last_run < best_start_distance)
+    {
+        best_start_distance = last_run;
+        cout << "Writing solution " << best_start_distance << endl;
+        write_solution(dest);  // write each time an improvement is found
+    }
+
+
+    total_dist = get_solution_distance();
+    if (best_start_distance <= total_dist)
+        return best_start_distance;     // solution already written
+
+    else
+    {
+        cout << "Writing solution " << total_dist << endl;
+        write_solution(dest);       //write current solution (midway through 2-opt)
+        return best_start_distance;
+    }
+}
+
+// Generate tour based on input tour
+int tsp::based_tour()
+{
+    solution.clear();
+    ifstream readbase(based);
+    ifstream readbasecoords(based_coords);
+
+    int id_read = 0;
+    int x_read = 0;
+    int y_read = 0;
+    deque <city*> based_original_list;
+    based_original_list.clear();
+
+    while (readbasecoords>>id_read>>x_read>>y_read) // go till end of file
+    {
+        based_original_list.push_back(new city(id_read, x_read, y_read, id_read, false));
+    }
+    readbasecoords.close();
+
+    deque <city*> not_original_list;
+    copy_city_deque(original_list, not_original_list); 
+
+    int index;
+    int current_num = num_cities;
+    int dist = 999999;
+    int closest_index;
+    int d;
+    readbase >> index;
+    while (readbase >> index)
+    {
+        if (current_num == 0)
+            break;
+        dist = 999999;
+
+        for (int i = 0; i < current_num; i++)
+        {
+            d = (based_original_list[index]->get_x() - original_list[i]->get_x())*(based_original_list[index]->get_x() - original_list[i]->get_x()) + (based_original_list[index]->get_y() - original_list[i]->get_y())*(based_original_list[index]->get_y() - original_list[i]->get_y());
+            if (d < dist)
+            {
+                dist = d;
+                closest_index = i;
+            }       
+        }
+        solution.push_back(original_list[closest_index]);
+        original_list.erase(original_list.begin() + closest_index); 
+        --current_num;
+    }
+    cout << endl;
+    solution[5]->display_coords();
+    cout << endl;
+    copy_city_deque(not_original_list, original_list);
+    return 0;
+}
+
 // Generates nearest neighbor tour in solution from list of cities in original_list, starting at start_index.
 int tsp::nearest_neighbor_basic(int start_index)
 {
@@ -229,7 +317,7 @@ int tsp::nearest_neighbor_basic(int start_index)
         --current_num;
         ++cities_added;
     }
-
+    
     copy_city_deque(temp, original_list);        // restore original list
     return total_dist + solution[0]->dist(solution[cities_added-1]);
 }

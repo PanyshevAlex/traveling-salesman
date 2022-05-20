@@ -19,7 +19,7 @@ const char OUTPUT_FN[] = "mysolution.txt";
 class tsp
 {
     public:
-        tsp(const char * filename, const char * destfilename); // Constructor, takes filename to read from as input
+        tsp(const char * filename, const char * destfilename, const char * basedtour, const char * basedcoords); // Constructor, takes filename to read from as input
         tsp(tsp & source);
         ~tsp();
         int read_file(const char * filename); // Reads a list of cities into original_list from filename
@@ -27,6 +27,8 @@ class tsp
         int brute_force_wrapper(); // Public function for brute force TSP solution
         int nearest_neighbor(); // Nearest neighbor with 2-opt (calls nearest_neighbor_basic() and two_change())
         int nearest_neighbor_fast(); // Nearest neighbor with 2-opt 
+        int based_tour();
+        int nearest_neighbor_fast_based();
         int nearest_neighbor_basic(int start_index); // Generates basic nearest neighbor tour beginning at start_index
         int two_change(); // Semi-naive 2-opt implementation.
         int two_opt(); // Attempt at 2-opt with neighbor lists (NOT WORKING)
